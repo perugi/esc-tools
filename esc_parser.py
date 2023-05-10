@@ -1,10 +1,8 @@
 # esc_parser.py - Download the results of ESC voting from a google sheet,
 # count the scores and upload the results to a separate sheet.
 
-from email import header
 import re
 import gspread
-import pprint
 
 SPREADSHEET_NAME = "ESC 2023"
 gs = gspread.oauth()
