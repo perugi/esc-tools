@@ -1,12 +1,9 @@
 # esc_parser.py - Download the results of ESC voting from a google sheet,
 # count the scores and upload the results to a separate sheet.
 
-import sys, re
+import re, json, sys
 import gspread
 import argparse
-
-SPREADSHEET_NAME = "ESC 2023"
-gs = gspread.oauth()
 
 parser = argparse.ArgumentParser(
     description="Parse the results from an ESC response sheet and store them as a table on a separate sheet"
@@ -17,14 +14,37 @@ parser.add_argument(
     type=str,
     choices=["si", "en"],
     default="si",
-    help="Language of the generated table (si|en), by default si.",
+    help="Language of the generated table, by default si.",
+)
+parser.add_argument(
+    "-n",
+    "--name",
+    type=str,
+    required=True,
+    help='Name of the Google Sheet on which to operate, e.g. "ESC 2023")',
 )
 
 args = parser.parse_args()
-print(args.lang)
+selected_lang = args.lang
+spreadsheet_name = args.name
+
+if sys.platform == "linux":
+    credentials = "~/.config/gspread/credentials.json"
+elif sys.platform == "win32":
+    credentials = "%APPDATA%/Roaming/gspread/credentials.json"
+else:
+    print("ERROR: Unrecognized OS")
+    sys.exit()
+
+gs = gspread.oauth(credentials_filename=credentials)
+
+# lang.json contains the translation of all the language specific strings.
+with open("lang.json") as f:
+    lang_data = f.read()
+lang = json.loads(lang_data)
 
 # Open the spreadsheet and load all the rows in as a list of dictionaries.
-sh = gs.open(SPREADSHEET_NAME)
+sh = gs.open(spreadsheet_name)
 worksheet = sh.worksheet("Form Responses")
 votes = worksheet.get_all_records()
 results = {}
@@ -36,7 +56,7 @@ performer_regex = re.compile(r"\d+\) (.+) \[(.+)\]")
 for vote in votes:
     for k, v in vote.items():
         # Ignore the Ocenjevalec and Timestamp data
-        if k == "Ocenjevalec:" or k == "Timestamp":
+        if k == lang[selected_lang]["judge"] or k == lang[selected_lang]["timestamp"]:
             continue
         mo = performer_regex.search(k)
         performer = mo[1]
@@ -45,7 +65,7 @@ for vote in votes:
         results[performer].setdefault(category, 0)
         results[performer][category] += v
 
-result_sheet = sh.add_worksheet(title="Results", rows=100, cols=20)
+result_sheet = sh.add_worksheet(title=lang[selected_lang]["results"], rows=100, cols=20)
 
 # Update the results sheet with the data from the dictionary.
 # The data needs to be assembled into lists in order to be used in the update
@@ -67,8 +87,8 @@ for performer, scores in results.items():
     i += 1
 
 # Populate the header row
-header_data.insert(0, "No.")
-header_data.insert(1, "Izvajalec")
+header_data.insert(0, lang[selected_lang]["no"])
+header_data.insert(1, lang[selected_lang]["performer"])
 row_range = "A1:" + chr(ord("@") + len(header_data)) + "1"
 result_sheet.update(row_range, [header_data])
 result_sheet.format(row_range, {"textFormat": {"bold": True}})

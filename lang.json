@@ -1,0 +1,16 @@
+{
+    "si": {
+        "judge": "Ocenjevalec:",
+        "timestamp": "Timestamp",
+        "results": "Rezultati",
+        "no": "Št.",
+        "performer": "Izvajalec"
+    },
+    "en": {
+        "judge": "Judge:",
+        "timestamp": "Timestamp",
+        "results": "Results",
+        "no": "No.",
+        "performer": "Performer"
+    }
+}
