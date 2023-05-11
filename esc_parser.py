@@ -1,11 +1,27 @@
 # esc_parser.py - Download the results of ESC voting from a google sheet,
 # count the scores and upload the results to a separate sheet.
 
-import re
+import sys, re
 import gspread
+import argparse
 
 SPREADSHEET_NAME = "ESC 2023"
 gs = gspread.oauth()
+
+parser = argparse.ArgumentParser(
+    description="Parse the results from an ESC response sheet and store them as a table on a separate sheet"
+)
+parser.add_argument(
+    "-l",
+    "--lang",
+    type=str,
+    choices=["si", "en"],
+    default="si",
+    help="Language of the generated table (si|en), by default si.",
+)
+
+args = parser.parse_args()
+print(args.lang)
 
 # Open the spreadsheet and load all the rows in as a list of dictionaries.
 sh = gs.open(SPREADSHEET_NAME)
